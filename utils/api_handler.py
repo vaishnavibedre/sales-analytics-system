@@ -2,148 +2,176 @@
 API Handler Module
 Handles API requests for product information
 """
+import requests
 
-import json
 
-def fetch_product_info(product_id):
+# ================= TASK 3.1(a): FETCH ALL PRODUCTS =================
+
+def fetch_all_products():
     """
-    Fetch product information from external API
-    
-    Note: This is a mock implementation since we don't have a real API endpoint.
-    In a real implementation, you would use the requests library:
-    
-    import requests
-    response = requests.get(f'https://api.example.com/products/{product_id}')
-    return response.json()
-    
-    Args:
-        product_id: Product ID to fetch information for
-        
-    Returns:
-        Dictionary with product information
+    Fetches all products from DummyJSON API
+    Returns: list of product dictionaries
     """
-    # Mock product database
-    mock_products = {
-        'P101': {
-            'product_id': 'P101',
-            'name': 'Laptop Premium',
-            'category': 'Electronics',
-            'manufacturer': 'TechCorp',
-            'warranty_months': 24
-        },
-        'P102': {
-            'product_id': 'P102',
-            'name': 'Wireless Mouse',
-            'category': 'Accessories',
-            'manufacturer': 'PeripheralCo',
-            'warranty_months': 12
-        },
-        'P103': {
-            'product_id': 'P103',
-            'name': 'Mechanical Keyboard',
-            'category': 'Accessories',
-            'manufacturer': 'KeyMasters',
-            'warranty_months': 12
-        },
-        'P104': {
-            'product_id': 'P104',
-            'name': 'LED Monitor',
-            'category': 'Electronics',
-            'manufacturer': 'DisplayTech',
-            'warranty_months': 36
-        },
-        'P105': {
-            'product_id': 'P105',
-            'name': 'HD Webcam',
-            'category': 'Electronics',
-            'manufacturer': 'VisionTech',
-            'warranty_months': 12
-        },
-        'P106': {
-            'product_id': 'P106',
-            'name': 'Headphones',
-            'category': 'Audio',
-            'manufacturer': 'SoundPro',
-            'warranty_months': 18
-        },
-        'P107': {
-            'product_id': 'P107',
-            'name': 'USB Cable',
-            'category': 'Accessories',
-            'manufacturer': 'CableCo',
-            'warranty_months': 6
-        },
-        'P108': {
-            'product_id': 'P108',
-            'name': 'External Hard Drive 1TB',
-            'category': 'Storage',
-            'manufacturer': 'DataSafe',
-            'warranty_months': 24
-        },
-        'P109': {
-            'product_id': 'P109',
-            'name': 'Gaming Wireless Mouse',
-            'category': 'Accessories',
-            'manufacturer': 'GameGear',
-            'warranty_months': 12
-        },
-        'P110': {
-            'product_id': 'P110',
-            'name': 'Laptop Charger 65W',
-            'category': 'Accessories',
-            'manufacturer': 'PowerPlus',
-            'warranty_months': 12
+    url = "https://dummyjson.com/products?limit=100"
+
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+
+        data = response.json()
+        products = data.get("products", [])
+
+        formatted_products = []
+
+        for product in products:
+            formatted_products.append({
+                "id": product.get("id"),
+                "title": product.get("title"),
+                "category": product.get("category"),
+                "brand": product.get("brand"),
+                "price": product.get("price"),
+                "rating": product.get("rating")
+            })
+
+        print("✅ Successfully fetched products from DummyJSON API")
+        return formatted_products
+
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Failed to fetch products: {e}")
+        return []
+
+
+# ================= TASK 3.1(b): CREATE PRODUCT MAPPING =================
+
+def create_product_mapping(api_products):
+    """
+    Creates a mapping of product IDs to product info
+    Returns: dictionary mapping product IDs to info
+    """
+    product_mapping = {}
+
+    for product in api_products:
+        product_id = product.get("id")
+
+        product_mapping[product_id] = {
+            "title": product.get("title"),
+            "category": product.get("category"),
+            "brand": product.get("brand"),
+            "rating": product.get("rating")
         }
-    }
-    
-    return mock_products.get(product_id, {
-        'product_id': product_id,
-        'name': 'Unknown Product',
-        'category': 'Unknown',
-        'manufacturer': 'Unknown',
-        'warranty_months': 0
-    })
+
+    return product_mapping
 
 
-def enrich_records_with_api_data(records):
-    """
-    Enrich sales records with additional product information from API
-    
-    Args:
-        records: List of sales record dictionaries
-        
-    Returns:
-        List of enriched records
-    """
-    enriched_records = []
-    
-    for record in records:
-        product_id = record.get('ProductID', '')
-        
-        # Fetch product info from API
-        product_info = fetch_product_info(product_id)
-        
-        # Create enriched record
-        enriched = record.copy()
-        enriched['Category'] = product_info.get('category', 'Unknown')
-        enriched['Manufacturer'] = product_info.get('manufacturer', 'Unknown')
-        enriched['WarrantyMonths'] = product_info.get('warranty_months', 0)
-        
-        enriched_records.append(enriched)
-    
-    return enriched_records
+# ================= PRINTING OUTPUTS =================
+
+if __name__ == "__main__":
+
+    print("\n===== FETCHING ALL PRODUCTS =====")
+    api_products = fetch_all_products()
+
+    print("\nSample Product Output:")
+    if api_products:
+        print(api_products[0])
+
+    print("\n===== CREATING PRODUCT MAPPING =====")
+    product_mapping = create_product_mapping(api_products)
+
+    print("\nSample Product Mapping Entry:")
+    if product_mapping:
+        first_key = list(product_mapping.keys())[0]
+        print(f"{first_key}: {product_mapping[first_key]}")
+
+import os
 
 
-def get_api_status():
+# ================= TASK 3.2 : ENRICH SALES DATA =================
+
+def enrich_sales_data(transactions, product_mapping):
     """
-    Check API availability status
-    
-    Returns:
-        Dictionary with API status information
+    Enriches transaction data with API product information
+    Returns: list of enriched transaction dictionaries
     """
-    # In a real implementation, you would ping the actual API
-    return {
-        'status': 'available',
-        'message': 'Mock API is running',
-        'products_available': 10
-    }
+    enriched_transactions = []
+
+    for tx in transactions:
+        enriched_tx = tx.copy()
+
+        product_id = tx.get("ProductID", "")
+        numeric_id = None
+
+        # Extract numeric ID (P101 -> 101, P5 -> 5)
+        try:
+            numeric_id = int("".join(filter(str.isdigit, product_id)))
+        except (ValueError, TypeError):
+            numeric_id = None
+
+        api_data = product_mapping.get(numeric_id)
+
+        if api_data:
+            enriched_tx["API_Category"] = api_data.get("category")
+            enriched_tx["API_Brand"] = api_data.get("brand")
+            enriched_tx["API_Rating"] = api_data.get("rating")
+            enriched_tx["API_Match"] = True
+        else:
+            enriched_tx["API_Category"] = None
+            enriched_tx["API_Brand"] = None
+            enriched_tx["API_Rating"] = None
+            enriched_tx["API_Match"] = False
+
+        enriched_transactions.append(enriched_tx)
+
+    print("✅ Sales data enriched successfully")
+    return enriched_transactions
+
+
+# ================= SAVE ENRICHED DATA =================
+
+def save_enriched_data(enriched_transactions, filename="data/enriched_sales_data.txt"):
+    """
+    Saves enriched transactions back to file in pipe-delimited format
+    """
+    if not enriched_transactions:
+        print("⚠ No enriched data to save")
+        return
+
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+    headers = list(enriched_transactions[0].keys())
+
+    try:
+        with open(filename, "w", encoding="utf-8") as file:
+            # Write header
+            file.write("|".join(headers) + "\n")
+
+            # Write rows
+            for tx in enriched_transactions:
+                row = [
+                    str(tx.get(header)) if tx.get(header) is not None else ""
+                    for header in headers
+                ]
+                file.write("|".join(row) + "\n")
+
+        print(f"✅ Enriched data saved to {filename}")
+
+    except IOError as e:
+        print(f"❌ Failed to save enriched data: {e}")
+
+
+# ================= PRINTING OUTPUTS =================
+
+if __name__ == "__main__":
+
+    # Assumes:
+    # - `transactions` is already loaded as a list of dictionaries
+    # - `product_mapping` is created using create_product_mapping()
+
+    print("\n===== ENRICHING SALES DATA =====")
+    enriched_transactions = enrich_sales_data(transactions, product_mapping)
+
+    print("\nSample Enriched Transaction:")
+    if enriched_transactions:
+        print(enriched_transactions[0])
+
+    print("\n===== SAVING ENRICHED SALES DATA =====")
+    save_enriched_data(enriched_transactions)
