@@ -1,0 +1,3 @@
+TransactionID|Date|ProductID|ProductName|Quantity|UnitPrice|CustomerID|Region|API_Category|API_Brand|API_Rating|API_Match
+T068|2024-12-02|P109|Wireless Mouse|6|1692.0|C018|South|None|None|None|False
+T027|2024-12-27|P105|Webcam|9|4494.0|C007|South|None|None|None|False
