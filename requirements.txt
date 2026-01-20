@@ -1,0 +1,11 @@
+# Sales Data Analytics System Requirements
+
+# Core Python modules used (all from standard library):
+# - os
+# - json
+
+# Optional: If you want to connect to a real API instead of the mock
+# requests>=2.28.0
+
+# Note: This project is designed to work with Python's standard library only
+# No additional packages are required for basic functionality
