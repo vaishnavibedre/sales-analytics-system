@@ -1,0 +1,54 @@
+============================================================
+                 SALES ANALYTICS REPORT
+           Generated: 2026-01-09 19:10:45
+           Records Processed: 2
+============================================================
+
+OVERALL SUMMARY
+------------------------------------------------------------
+Total Revenue:        ₹50,598.00
+Total Transactions:   2
+Average Order Value:  ₹25,299.00
+Date Range:           2024-12-02 to 2024-12-27
+
+REGION-WISE PERFORMANCE
+------------------------------------------------------------
+Region    Sales          % of Total     Transactions
+South     ₹50,598.00   100.0          %2
+
+TOP 5 PRODUCTS
+------------------------------------------------------------
+Rank  Product Name        Qty Sold    Revenue
+1     Webcam              9           ₹40,446.00
+2     Wireless Mouse      6           ₹10,152.00
+
+TOP 5 CUSTOMERS
+------------------------------------------------------------
+Rank  Customer ID    Total Spent       Orders
+1     C007           ₹40,446.00      1
+2     C018           ₹10,152.00      1
+
+DAILY SALES TREND
+------------------------------------------------------------
+Date           Revenue        Transactions   Unique Cust.
+2024-12-02     ₹10,152.00   1              1
+2024-12-27     ₹40,446.00   1              1
+
+PRODUCT PERFORMANCE ANALYSIS
+------------------------------------------------------------
+Best Selling Day: 2024-12-27 (₹40,446.00, 1 transactions)
+
+Low Performing Products (Qty < 10):
+ - Wireless Mouse: Qty=6, Revenue=₹10,152.00
+ - Webcam: Qty=9, Revenue=₹40,446.00
+
+Average Transaction Value per Region:
+ - South: ₹25,299.00
+
+API ENRICHMENT SUMMARY
+------------------------------------------------------------
+Total Products Enriched: 0/2
+Success Rate: 0.00%
+Products Not Enriched:
+ - P109
+ - P105
