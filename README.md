@@ -1,8 +1,8 @@
 # Sales Analytics System
 
 ## Author  
-**Ramanathan Sathappan**  
-**Student ID:** bitsom_ba_25072063  
+**Vaishnavi Bedre**  
+**Student ID:** bitsom_ba_25071050 
 
 ---
 
