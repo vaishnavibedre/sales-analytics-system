@@ -1,0 +1,14 @@
+Sales Analytics Report - December 2024
+--------------------------------------
+
+Total records parsed: 80
+Invalid records removed: 10
+Valid records after cleaning: 70
+
+Total Revenue: ₹ 3527808.00
+
+Revenue by Region:
+  South: ₹ 889332.00
+  East: ₹ 467969.00
+  North: ₹ 1321605.00
+  West: ₹ 848902.00
