@@ -2,230 +2,300 @@
 Data Processor Module
 Handles data cleaning and validation for sales records
 """
-
-def clean_numeric_field(value):
+def calculate_total_revenue(transactions):
     """
-    Remove commas from numeric fields and convert to appropriate type
-    
-    Args:
-        value: String value that may contain commas
-        
-    Returns:
-        Cleaned numeric value (int or float)
+    Calculates total revenue from all transactions
+    Returns: float
     """
-    if not value:
-        return 0
-    
-    # Remove commas
-    cleaned = value.replace(',', '')
-    
-    # Try to convert to int first, then float
-    try:
-        if '.' in cleaned:
-            return float(cleaned)
-        else:
-            return int(cleaned)
-    except ValueError:
-        return 0
+    total_revenue = 0.0
+    for tx in transactions:
+        try:
+            quantity = int(tx.get("Quantity", 0))
+            unit_price = float(tx.get("UnitPrice", 0))
+            total_revenue += quantity * unit_price
+        except (ValueError, TypeError):
+            continue
+    return round(total_revenue, 2)
 
 
-def is_valid_transaction_id(transaction_id):
+def region_wise_sales(transactions):
     """
-    Check if transaction ID starts with 'T'
-    
-    Args:
-        transaction_id: Transaction ID to validate
-        
-    Returns:
-        Boolean indicating if valid
+    Analyzes sales by region
+    Returns: dictionary sorted by total_sales descending
     """
-    return transaction_id and transaction_id.startswith('T')
+    region_data = {}
+    total_sales_all = 0.0
 
+    for tx in transactions:
+        region = tx.get("Region")
+        if not region:
+            continue
 
-def clean_product_name(product_name):
-    """
-    Remove commas from product names
-    
-    Args:
-        product_name: Product name that may contain commas
-        
-    Returns:
-        Cleaned product name
-    """
-    return product_name.replace(',', ' ') if product_name else product_name
+        try:
+            quantity = int(tx.get("Quantity", 0))
+            unit_price = float(tx.get("UnitPrice", 0))
+            sale_value = quantity * unit_price
+        except (ValueError, TypeError):
+            continue
 
-
-def is_valid_record(record):
-    """
-    Check if a record should be removed based on cleaning criteria
-    
-    Args:
-        record: Dictionary representing a sales record
-        
-    Returns:
-        Tuple (is_valid, reason) - Boolean and string explaining why invalid
-    """
-    # Check if TransactionID starts with 'T'
-    if not is_valid_transaction_id(record.get('TransactionID', '')):
-        return False, "Invalid TransactionID"
-    
-    # Check if CustomerID is missing
-    if not record.get('CustomerID', '').strip():
-        return False, "Missing CustomerID"
-    
-    # Check if Region is missing
-    if not record.get('Region', '').strip():
-        return False, "Missing Region"
-    
-    # Check if Quantity <= 0
-    quantity = clean_numeric_field(record.get('Quantity', '0'))
-    if quantity <= 0:
-        return False, "Invalid Quantity"
-    
-    # Check if UnitPrice <= 0
-    unit_price = clean_numeric_field(record.get('UnitPrice', '0'))
-    if unit_price <= 0:
-        return False, "Invalid UnitPrice"
-    
-    return True, "Valid"
-
-
-def clean_record(record):
-    """
-    Clean a valid record by removing commas from product names and numbers
-    
-    Args:
-        record: Dictionary representing a sales record
-        
-    Returns:
-        Cleaned record dictionary
-    """
-    cleaned = record.copy()
-    
-    # Clean ProductName
-    if 'ProductName' in cleaned:
-        cleaned['ProductName'] = clean_product_name(cleaned['ProductName'])
-    
-    # Clean numeric fields
-    if 'Quantity' in cleaned:
-        cleaned['Quantity'] = str(clean_numeric_field(cleaned['Quantity']))
-    
-    if 'UnitPrice' in cleaned:
-        cleaned['UnitPrice'] = str(clean_numeric_field(cleaned['UnitPrice']))
-    
-    return cleaned
-
-
-def process_sales_data(records):
-    """
-    Process sales data: validate and clean records
-    
-    Args:
-        records: List of record dictionaries
-        
-    Returns:
-        Tuple (valid_records, invalid_records, stats)
-    """
-    valid_records = []
-    invalid_records = []
-    
-    for record in records:
-        is_valid, reason = is_valid_record(record)
-        
-        if is_valid:
-            cleaned = clean_record(record)
-            valid_records.append(cleaned)
-        else:
-            invalid_records.append({
-                'record': record,
-                'reason': reason
-            })
-    
-    stats = {
-        'total_records': len(records),
-        'valid_records': len(valid_records),
-        'invalid_records': len(invalid_records)
-    }
-    
-    return valid_records, invalid_records, stats
-
-
-def calculate_total_revenue(records):
-    """
-    Calculate total revenue from valid records
-    
-    Args:
-        records: List of valid record dictionaries
-        
-    Returns:
-        Total revenue as float
-    """
-    total = 0
-    for record in records:
-        quantity = clean_numeric_field(record.get('Quantity', '0'))
-        unit_price = clean_numeric_field(record.get('UnitPrice', '0'))
-        total += quantity * unit_price
-    
-    return total
-
-
-def get_sales_by_region(records):
-    """
-    Calculate sales statistics by region
-    
-    Args:
-        records: List of valid record dictionaries
-        
-    Returns:
-        Dictionary with region as key and stats as value
-    """
-    region_stats = {}
-    
-    for record in records:
-        region = record.get('Region', 'Unknown')
-        quantity = clean_numeric_field(record.get('Quantity', '0'))
-        unit_price = clean_numeric_field(record.get('UnitPrice', '0'))
-        revenue = quantity * unit_price
-        
-        if region not in region_stats:
-            region_stats[region] = {
-                'total_revenue': 0,
-                'total_transactions': 0,
-                'total_quantity': 0
+        if region not in region_data:
+            region_data[region] = {
+                "total_sales": 0.0,
+                "transaction_count": 0
             }
-        
-        region_stats[region]['total_revenue'] += revenue
-        region_stats[region]['total_transactions'] += 1
-        region_stats[region]['total_quantity'] += quantity
-    
-    return region_stats
+
+        region_data[region]["total_sales"] += sale_value
+        region_data[region]["transaction_count"] += 1
+        total_sales_all += sale_value
+
+    for region in region_data:
+        total = region_data[region]["total_sales"]
+        region_data[region]["total_sales"] = round(total, 2)
+        region_data[region]["percentage"] = round(
+            (total / total_sales_all) * 100, 2
+        ) if total_sales_all else 0
+
+    return dict(
+        sorted(
+            region_data.items(),
+            key=lambda x: x[1]["total_sales"],
+            reverse=True
+        )
+    )
 
 
-def get_top_products(records, top_n=5):
+def top_selling_products(transactions, n=5):
     """
-    Get top N products by revenue
-    
-    Args:
-        records: List of valid record dictionaries
-        top_n: Number of top products to return
-        
-    Returns:
-        List of tuples (product_name, revenue)
+    Finds top n products by total quantity sold
+    Returns: list of tuples
+    (ProductName, TotalQuantity, TotalRevenue)
     """
-    product_revenue = {}
-    
-    for record in records:
-        product = record.get('ProductName', 'Unknown')
-        quantity = clean_numeric_field(record.get('Quantity', '0'))
-        unit_price = clean_numeric_field(record.get('UnitPrice', '0'))
-        revenue = quantity * unit_price
-        
-        if product not in product_revenue:
-            product_revenue[product] = 0
-        
-        product_revenue[product] += revenue
-    
-    # Sort by revenue descending
-    sorted_products = sorted(product_revenue.items(), key=lambda x: x[1], reverse=True)
-    
-    return sorted_products[:top_n]
+    product_data = {}
+
+    for tx in transactions:
+        product = tx.get("ProductName")
+        try:
+            quantity = int(tx.get("Quantity", 0))
+            unit_price = float(tx.get("UnitPrice", 0))
+            revenue = quantity * unit_price
+        except (ValueError, TypeError):
+            continue
+
+        if product not in product_data:
+            product_data[product] = {"quantity": 0, "revenue": 0.0}
+
+        product_data[product]["quantity"] += quantity
+        product_data[product]["revenue"] += revenue
+
+    product_list = [
+        (product, data["quantity"], round(data["revenue"], 2))
+        for product, data in product_data.items()
+    ]
+
+    product_list.sort(key=lambda x: x[1], reverse=True)
+    return product_list[:n]
+
+
+def customer_analysis(transactions):
+    """
+    Analyzes customer purchase patterns
+    Returns: dictionary sorted by total_spent descending
+    """
+    customer_data = {}
+
+    for tx in transactions:
+        customer = tx.get("CustomerID")
+        if not customer:
+            continue
+
+        product = tx.get("ProductName")
+        try:
+            quantity = int(tx.get("Quantity", 0))
+            unit_price = float(tx.get("UnitPrice", 0))
+            amount = quantity * unit_price
+        except (ValueError, TypeError):
+            continue
+
+        if customer not in customer_data:
+            customer_data[customer] = {
+                "total_spent": 0.0,
+                "purchase_count": 0,
+                "products_bought": set()
+            }
+
+        customer_data[customer]["total_spent"] += amount
+        customer_data[customer]["purchase_count"] += 1
+        customer_data[customer]["products_bought"].add(product)
+
+    for customer in customer_data:
+        total = customer_data[customer]["total_spent"]
+        count = customer_data[customer]["purchase_count"]
+
+        customer_data[customer]["total_spent"] = round(total, 2)
+        customer_data[customer]["avg_order_value"] = round(
+            total / count, 2
+        ) if count else 0
+        customer_data[customer]["products_bought"] = sorted(
+            customer_data[customer]["products_bought"]
+        )
+
+    return dict(
+        sorted(
+            customer_data.items(),
+            key=lambda x: x[1]["total_spent"],
+            reverse=True
+        )
+    )
+
+
+# ------------------- PRINTING OUTPUTS -------------------
+
+if __name__ == "__main__":
+
+    # Assume `transactions` is already loaded as a list of dictionaries
+
+    print("\n===== TOTAL REVENUE =====")
+    total_revenue = calculate_total_revenue(transactions)
+    print(total_revenue)
+
+    print("\n===== REGION-WISE SALES =====")
+    region_sales = region_wise_sales(transactions)
+    for region, data in region_sales.items():
+        print(f"{region}: {data}")
+
+    print("\n===== TOP SELLING PRODUCTS =====")
+    top_products = top_selling_products(transactions, n=5)
+    for product in top_products:
+        print(product)
+
+    print("\n===== CUSTOMER PURCHASE ANALYSIS =====")
+    customers = customer_analysis(transactions)
+    for customer_id, data in customers.items():
+        print(f"{customer_id}: {data}")
+
+from collections import defaultdict
+
+
+# ================= TASK 2.2 : DATE-BASED ANALYSIS =================
+
+def daily_sales_trend(transactions):
+    """
+    Analyzes sales trends by date
+    Returns: dictionary sorted by date
+    """
+    daily_data = {}
+
+    for tx in transactions:
+        date = tx.get("Date")
+        if not date:
+            continue
+
+        try:
+            quantity = int(tx.get("Quantity", 0))
+            unit_price = float(tx.get("UnitPrice", 0))
+            revenue = quantity * unit_price
+        except (ValueError, TypeError):
+            continue
+
+        customer = tx.get("CustomerID")
+
+        if date not in daily_data:
+            daily_data[date] = {
+                "revenue": 0.0,
+                "transaction_count": 0,
+                "unique_customers": set()
+            }
+
+        daily_data[date]["revenue"] += revenue
+        daily_data[date]["transaction_count"] += 1
+
+        if customer:
+            daily_data[date]["unique_customers"].add(customer)
+
+    # Final formatting
+    for date in daily_data:
+        daily_data[date]["revenue"] = round(daily_data[date]["revenue"], 2)
+        daily_data[date]["unique_customers"] = len(
+            daily_data[date]["unique_customers"]
+        )
+
+    # Sort chronologically
+    return dict(sorted(daily_data.items()))
+
+
+def find_peak_sales_day(transactions):
+    """
+    Identifies the date with highest revenue
+    Returns: tuple (date, revenue, transaction_count)
+    """
+    daily_sales = daily_sales_trend(transactions)
+
+    peak_date = None
+    max_revenue = -float("inf")
+    transaction_count = 0
+
+    for date, data in daily_sales.items():
+        if data["revenue"] > max_revenue:
+            max_revenue = data["revenue"]
+            peak_date = date
+            transaction_count = data["transaction_count"]
+
+    return (peak_date, round(max_revenue, 2), transaction_count)
+
+
+# ================= TASK 2.3 : PRODUCT PERFORMANCE =================
+
+def low_performing_products(transactions, threshold=10):
+    """
+    Identifies products with low sales
+    Returns: list of tuples
+    (ProductName, TotalQuantity, TotalRevenue)
+    """
+    product_data = defaultdict(lambda: {"quantity": 0, "revenue": 0.0})
+
+    for tx in transactions:
+        product = tx.get("ProductName")
+
+        try:
+            quantity = int(tx.get("Quantity", 0))
+            unit_price = float(tx.get("UnitPrice", 0))
+            revenue = quantity * unit_price
+        except (ValueError, TypeError):
+            continue
+
+        product_data[product]["quantity"] += quantity
+        product_data[product]["revenue"] += revenue
+
+    low_products = []
+
+    for product, data in product_data.items():
+        if data["quantity"] < threshold:
+            low_products.append(
+                (product, data["quantity"], round(data["revenue"], 2))
+            )
+
+    # Sort by TotalQuantity ascending
+    low_products.sort(key=lambda x: x[1])
+
+    return low_products
+
+
+# ================= PRINTING OUTPUTS =================
+
+if __name__ == "__main__":
+
+    # Assume `transactions` is already loaded as a list of dictionaries
+
+    print("\n===== DAILY SALES TREND =====")
+    daily_trend = daily_sales_trend(transactions)
+    for date, data in daily_trend.items():
+        print(f"{date}: {data}")
+
+    print("\n===== PEAK SALES DAY =====")
+    peak_day = find_peak_sales_day(transactions)
+    print(peak_day)
+
+    print("\n===== LOW PERFORMING PRODUCTS =====")
+    low_products = low_performing_products(transactions, threshold=10)
+    for product in low_products:
+        print(product)
